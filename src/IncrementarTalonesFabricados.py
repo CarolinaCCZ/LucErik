@@ -9,7 +9,7 @@ import sqlite3
 import os
 
 
-class IncrementarTalonesFabricados2:
+class IncrementarTalonesFabricados:
     def __init__(self):
         super().__init__()
 
@@ -64,7 +64,7 @@ class IncrementarTalonesFabricados2:
                     print("prod[a]", prod[i])
 
                     # Incremento los materiales
-                    IncrementarTalonesFabricados2.IncrementarMateriales(a, i, cursor, listadoRTBS, prod)
+                    IncrementarTalonesFabricados.IncrementarMateriales(a, i, cursor, listadoRTBS, prod)
 
                     """cursor.execute("SELECT * FROM MATERIALES")
                     mat = cursor.fetchall()
@@ -116,4 +116,4 @@ class IncrementarTalonesFabricados2:
 
 if __name__ == "__main__":
     #Prueba.__init__
-    IncrementarTalonesFabricados2.incrementar()
+    IncrementarTalonesFabricados.incrementar()
