@@ -12,166 +12,104 @@ class DecrementarTalonesConsumidos:
 
     @staticmethod
     def decrementar():
-
+        global con, cursor
         try:
             con = sqlite3.connect('Y:\LucErik.db')
             cursor = con.cursor()
         except sqlite3.OperationalError:
             sys.exit()
 
-        cursor.execute("SELECT * FROM HUECOS ORDER BY ID ASC")
-        talones = cursor.fetchall()
-        field_names = [i[0] for i in cursor.description]
-
-        # print("Nombre columnas: ", field_names)
-        print("talones: ", talones)
-
         cursor.execute("SELECT * FROM MAQUINAS ORDER BY ID ASC")
         cubiertas = cursor.fetchall()
         print("Cubiertas: ", cubiertas)
 
-        print("")
-
-        for i in range (len(talones)):
-            # Si hay talones en la máquina para producir
-            if talones[i][2] >= 2:
+        for i in range(len(cubiertas)):
+            # Compruebo si todavía hay que seguir produciendo
+            if cubiertas[i][5] < cubiertas[i][4]:
                 print("")
-                print("Hay talones en la máquina para producir cubiertas")
-                print("Máquina en huecos", talones[i][0])
-                # Compruebo si todavía hay que seguir produciendo
-                if cubiertas[i][5] < cubiertas[i][4]:
-                    print("Hay que seguir produciendo", cubiertas[i][5], "<", cubiertas[i][4])
-                    sql = "UPDATE MAQUINAS SET PROD_ACTUAL=PROD_ACTUAL+1 WHERE ID='"+talones[i][0]+"'"# Incremento en 1 la producción de cubiertas
-                    cursor.executescript(sql)
-                    sql = "UPDATE HUECOS SET T1=T1-2 WHERE ID='"+talones[i][0]+"'" # Decremento en 2 el cosumo de talones
-                    cursor.executescript(sql)
-                    print("Incremento en 1 la produccion de cubiertas")
-                    print("Decremento en 2 el consumo de talones")
+                print("i", i)
+                print("Hay que seguir produciendo", cubiertas[i][5], "<", cubiertas[i][4])
 
-                # Si ya se ha hecho todas las cubiertas de esa medida
-                else:
-                    print("Si ya se han hecho todas las cubiertas de esa medida", cubiertas[i][5], "=", cubiertas[i][4])
-                    print("Cambio los materiales de la máquina")
-                    sql = "UPDATE MAQUINAS SET MAT_ACTUAL=MAT_PROX WHERE ID='"+talones[i][0]+"'"
-                    cursor.executescript(sql)
-                    sql = "UPDATE MAQUINAS SET TOTALES_ACTUAL=TOTALES_PROX WHERE ID='"+talones[i][0]+"'"
-                    cursor.executescript(sql)
-                    sql = "UPDATE MAQUINAS SET PROD_ACTUAL=0 WHERE ID='" + talones[i][0] + "'"
-                    cursor.executescript(sql)
-                    sql = "UPDATE MAQUINAS SET MAT_PROX=NULL WHERE ID='"+talones[i][0]+"'"
-                    cursor.executescript(sql)
-                    sql = "UPDATE MAQUINAS SET TOTALES_PROX=0 WHERE ID= '" + talones[i][0] + "' "
-                    cursor.executescript(sql)
+                # Compruebo si hay talones en la máquina para producir
+                sql = "SELECT * FROM HUECOS WHERE ID= '" + cubiertas[i][0] + "' ORDER BY ID ASC"
+                cursor.execute(sql)
+                talones = cursor.fetchall()
 
-                    sql = "SELECT * FROM MAQUINAS WHERE ID = '"+talones[i][0]+"' "
+                print("Talones: ", talones)
+                print("Máquina: ", cubiertas[i][0])
+
+                if talones[0][3] == 0:
+                    sql = "UPDATE HUECOS SET MATERIAL='VACIO' WHERE HUECO='H1' AND ID='" + cubiertas[i][0] + "'"
+                    cursor.executescript(sql)
+                    sql = "SELECT * FROM HUECOS WHERE ID= '" + cubiertas[i][0] + "' ORDER BY ID ASC"
                     cursor.execute(sql)
-                    cubiertas = cursor.fetchall()
-                    print("MAQUINAS", cubiertas)
+                    talones = cursor.fetchall()
 
-                    print("talones[i][1]", talones[i][1])
-                    print("cubiertas[i][2]", cubiertas[i][2])
-                    # Una vez cambiada la medida en la máquina, compruebo que tenga material en los huecos
-                    if talones[i][1] != cubiertas[i][2]:
-                        print("Una vez cambiada la medida, compruebo que tenga material en los huecos")
-                        # Busco ese material en los huecos
-                        columna = 1
-                        encontrado = False
+                # Si hay 2 o más talones en el primer hueco y si es de ese material:
+                # Incremento en 1 la producción de cubiertas
+                # Decremento en 2 el consumo de talones
+                print("cubiertas[i][2]", cubiertas[i][2])
 
-                        while columna < 11 and encontrado==False:
-                            print("Columna: ", columna)
-                            print("i: ", i)
-                            sql = "SELECT * FROM HUECOS WHERE ID = '" + talones[i][0] + "' "
-                            cursor.execute(sql)
-                            talones = cursor.fetchall()
-                            # Si la encuentro, la  coloco en el primer lugar, que es el hueco que se usa para decrementar y producir cubiertas
-                            if talones[i][columna] == cubiertas[i][2]:
-                                print("Si la encuentro la coloco en el primer lugar de la tabla huecos")
-                                temp_material = talones[i][1]
-                                temp_talones = talones[i][2]
-                                sql = "UPDATE HUECOS SET H1= '" + talones[i][columna] + "' WHERE ID= '" + talones[i][0] + "' "
-                                cursor.executescript(sql)
-                                sql = "UPDATE HUECOS SET T1= '" + str(talones[i][columna+1]) + "' WHERE ID= '" + talones[i][0] + "' "
-                                cursor.executescript(sql)
-                                print("El que estaba en primer lugar le coloco donde estaba el otro")
-                                sql = "UPDATE HUECOS SET '"+field_names[columna]+"' = '"+temp_material+"' WHERE ID = '" + talones[i][0] + "' "
-                                cursor.executescript(sql)
-                                sql = "UPDATE HUECOS SET '" +str(field_names[columna+1]) + "' = '" + str(temp_talones) + "' WHERE ID= '" + talones[i][0] + "' "
-                                cursor.executescript(sql)
+                # Si el número de talones es mayor que 2 y coincide el material
+                if talones[0][3] >= 2 and talones[0][2] == cubiertas[i][2]:
+                    print("Incremento en 1 la producción de cubiertas")
+                    sql = "UPDATE MAQUINAS SET PROD_ACTUAL=PROD_ACTUAL+1 WHERE ID='" + cubiertas[i][0] + "'"
+                    cursor.executescript(sql)
 
-                                cursor.execute("SELECT * FROM HUECOS WHERE ID = '" + talones[i][0] + "' ")
-                                print("talones: ", cursor.fetchall())
-                                #sql = "SELECT * FROM HUECOS WHERE ID = '" + talones[i][0] + "' "
-                                #cursor.execute(sql)
-                                #talones = cursor.fetchall()
+                    print("Decremento en 2 el consumo de talones")
+                    sql = "UPDATE HUECOS SET CANTIDAD=CANTIDAD-2 WHERE HUECO='H1' AND ID='" + cubiertas[i][0] + "'"
+                    cursor.executescript(sql)
 
-                                encontrado = True
-                                columna = columna + 2
+                # Si no hay talones en el primer hueco o no es del material que se está produciendo,
+                # Recorro los huecos a ver si hay material en otro hueco
+                else:
+                    b = 1
+                    while b < (len(talones)):
+                        print("talones[b][2]", talones[b][2])
+                        # Si lo encuentro intercambio los huecos
+                        if talones[b][2] == cubiertas[i][2]:
+                            """INTERCAMBIO"""
+                            # Guardo lo que hay en el primer hueco
+                            material = talones[0][2]
+                            print("MATERIAL:", material)
+                            cantidad = talones[0][3]
+                            print("CANTIDAD:", cantidad)
 
-                            else:
-                                columna = columna + 2
-
-                        # Si no ha encontrado el material en la máquina dejo el primer hueco en vacío
-                        if not encontrado:
-                            print("Si no ha encontrado el material, dejo el primer hueco en vacío")
-                            sql = "UPDATE HUECOS SET H1='VACIO'"
-                            cursor.executescript(sql)
-                            sql = "UPDATE HUECOS SET T1=0"
+                            # Guardo en el primer hueco lo que he encontrado
+                            sql = "UPDATE HUECOS SET MATERIAL= '" + talones[b][2] + "', CANTIDAD= '" + str(
+                                talones[b][3]) + "' WHERE HUECO='H1' AND ID='" + cubiertas[i][0] + "' "
                             cursor.executescript(sql)
 
-                            cursor.execute("SELECT * FROM HUECOS WHERE ID=?", (talones[i][0]))
-                            print("HUECOS", cursor.fetchall())
+                            # Guardo en el hueco donde lo he encontrado lo que había en el primer hueco
+                            sql = "UPDATE HUECOS SET MATERIAL='" + material + "', CANTIDAD= '" + str(
+                                cantidad) + "' WHERE HUECO='" + talones[b][1] + "' AND ID='" + cubiertas[i][0] + "'"
+                            cursor.executescript(sql)
 
-            #Se han acabado los talones para producir, hay que buscar si hay más en la máquina
+                            b = b + 1
+                        else:
+                            b = b + 1
+
+            # Si se ha llegado al tope de cubiertas del primer material, es decir, del que se está produciendo
             else:
-                print("Si se han acabado los talones para producir, busco en la máquina")
-                # Busco ese material en los huecos
-                encontrado = False
-                columna = 3
+                print("Si ya se han hecho todas las cubiertas de esa medida", cubiertas[i][5], "=", cubiertas[i][4])
+                print("Cambio los materiales de la máquina")
+                sql = "UPDATE MAQUINAS SET MAT_ACTUAL=MAT_PROX WHERE ID='" + cubiertas[i][0] + "'"
+                cursor.executescript(sql)
+                sql = "UPDATE MAQUINAS SET TOTALES_ACTUAL=TOTALES_PROX WHERE ID='" + cubiertas[i][0] + "'"
+                cursor.executescript(sql)
+                sql = "UPDATE MAQUINAS SET PROD_ACTUAL=0 WHERE ID='" + cubiertas[i][0] + "'"
+                cursor.executescript(sql)
+                sql = "UPDATE MAQUINAS SET MAT_PROX=NULL WHERE ID='" + cubiertas[i][0] + "'"
+                cursor.executescript(sql)
+                sql = "UPDATE MAQUINAS SET TOTALES_PROX=0 WHERE ID= '" + cubiertas[i][0] + "' "
+                cursor.executescript(sql)
 
-                while columna < 11 and encontrado==False:
-                    print("talones[i][columna]: ", talones[i][columna])
-                    print("talones[i][columna+1]: ", talones[i][columna + 1])
-                    print("i: ", i)
-                    # Si la encuentro, la  coloco en el primer lugar, que es el hueco que se usa para decrementar y producir cubiertas
-                    if talones[i][columna] == cubiertas[i][2]:
-                        print("Si lo encuentro, lo coloco en el primer lugar")
-                        sql = "UPDATE HUECOS SET H1= '" + talones[i][columna] + "' WHERE ID= '" + talones[i][0] + "' "
-                        cursor.executescript(sql)
-                        sql = "UPDATE HUECOS SET T1= '" + str(talones[i][columna+1]) + "' WHERE ID= '" + talones[i][0] + "' "
-                        cursor.executescript(sql)
+                sql = "SELECT * FROM MAQUINAS WHERE ID = '" + cubiertas[i][0] + "' "
+                cursor.execute(sql)
+                cubiertas = cursor.fetchall()
 
-                        # sql = "SELECT * FROM HUECOS WHERE ID = '" + talones[i][0] + "' "
-                        # cursor.execute(sql)
+        con.close()
 
-                        # Dejo vacío el hueco del que acabamos de quitar un carro
-                        print("Dejo vacío el hueco del que acabamos de quitar un carro")
-
-                        sql = "UPDATE HUECOS SET '" + field_names[columna] + "' = 'VACIO'"
-                        cursor.executescript(sql)
-                        sql = "UPDATE HUECOS SET '" + str(field_names[columna+1]) + "' = 0"
-                        cursor.executescript(sql)
-
-                        #sql = "SELECT * FROM HUECOS WHERE ID = '" + talones[i][0] + "' "
-                        #cursor.execute(sql)
-
-                        encontrado = True
-
-                        break
-                    else:
-                        columna = columna + 2
-
-                # Si no ha encontrado el material en la máquina dejo el primer hueco en vacío
-                if not encontrado:
-                    print("Si no ha encontrado el material en la máquina, dejo el primer hueco en vacío")
-                    sql = "UPDATE HUECOS SET H1='VACIO' WHERE ID= '" + talones[i][0] + "' "
-                    cursor.executescript(sql)
-                    sql = "UPDATE HUECOS SET T1=0 WHERE ID= '" + talones[i][0] + "' "
-                    cursor.executescript(sql)
-
-                    cursor.execute("SELECT * FROM HUECOS WHERE ID=?", (talones[i][0],))
-                    print("HUECOS", cursor.fetchall())
-
-    # con.close()
 
 if __name__ == "__main__":
     DecrementarTalonesConsumidos.decrementar()
