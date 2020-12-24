@@ -19,32 +19,49 @@ from PyQt5.QtCore import QThread
 from PyQt5.QtGui import *
 
 
-
 class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         # Método encargado de generar la interfaz
         self.setupUi(self)
-        #uic.loadUi("Ordenes.ui", self)
-        self.labelOP = QtWidgets.QLabel(self.frame)
+        # uic.loadUi("Ordenes.ui", self)
         self.setNombreOperario()
         self.setNombreServicio()
         self.setHora()
         self.generarOrdenes()
         self.btn_buscarMaterial.clicked.connect(self.buscar)
-        global maquinas, carros
+        # self.btn_llevarMaterial.clicked.connect(self.llevarMaterial)
+        self.btn_actualizar.clicked.connect(self.generarOrdenes)
+        # global maquinas, carros, listaOrdenes, carros_llevar, ubicacion, cub_disponibles
 
-
-    # Función para conecetar con la base de datos
+    """ Función para conecetar con la base de datos """
     @staticmethod
     def conectarBD():
-        con = sqlite3.connect('Y:\LucErik.db')
-        cursor = con.cursor()
-        return cursor
+        global con, cur
+        try:
+            con = sqlite3.connect('Y:\LucErik.db')
+            cur = con.cursor()
+        except sqlite3.OperationalError:
+            sys.exit()
+        return cur
 
+    """ Función que busca el material en otras ubicaciones """
     def buscar(self):
-        os.system('python BuscarMaterial.py')
-
+        # Obtengo la fila seleccionada
+        row = self.tableWidget.currentRow()
+        # Saco la máquina
+        maquina = self.tableWidget.item(row, 0).text()
+        # Saco el material
+        material = self.tableWidget.item(row, 1).text()
+        # Saco los carros máximos que hay que llevar
+        max_carros = self.tableWidget.item(row, 2).text()
+        # Saco la ubicación
+        ubicacion = self.tableWidget.item(row, 3).text()
+        # Si no hay carros disponibles en ninguna parte le asigno el valor NULL para que no sea vacío
+        if len(ubicacion) == 0:
+            ubicacion = 'NULL'
+        # Paso como argumento el material que tiene que buscar
+        os.system('python BuscarMaterial.py' + " " + maquina + " " + material + " " + max_carros + " " + ubicacion)
 
     # Función para añadir el nombre del Operario
     def setNombreOperario(self):
@@ -71,113 +88,111 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         displayText = currentTime.toString('hh:mm:ss')
         self.hora.setText(displayText)
 
-    # Función que muestra las órdenes en una tabla en pantalla
+    """ FUNCIÓN QUE GENERA LAS ÓRDENES """
+
     def generarOrdenes(self):
         # Conexión con la base de datos
-        global carros_llevar, carros, ubicacion, cub_disponibles
-        carros = 0
-        cub_disponibles = 0
-
         cursor = OrdenesWindow.conectarBD()
 
+        # Inicializamos la lista de órdenes
         listaOrdenes = []
-        print(listaOrdenes)
 
-
+        # Se obtiene la tabla MÁQUINAS
         cursor.execute("SELECT * FROM MAQUINAS")
         maquinas = cursor.fetchall()
         print("maquinas: ", maquinas)
 
+        # Recorro la tabla máquinas para ver cuál necesita material
         for i in range(len(maquinas)):
             print("")
             print("Máquina: ", maquinas[i][0])
+            # Cubiertas que faltan por hacer
             cub = maquinas[i][4] - maquinas[i][5]
-            print("Cubiertas", cub)
+            print("Cubiertas que faltan por hacer", cub)
 
+            # Obtenemos los huecos pertenecientes a la máquina que estamos tratando
             sql = "SELECT * FROM HUECOS WHERE ID ='" + maquinas[i][0] + "'"
             cursor.execute(sql)
-            huecos = cursor.fetchall()[0]
+            huecos = cursor.fetchall()
             print("Tabla huecos: ", huecos)
-            # print("huecos[0][1]: ", huecos[0][1])
 
             maquina = maquinas[i][0]
             material = maquinas[i][2]
             pendientes = maquinas[i][4] - maquinas[i][5]
             prioridad = maquinas[i][7]
-            print("prioridad:", prioridad)
 
-            columna = 1
-            totales = 0
+            cub_disponibles = 0
             huecos_totales = maquinas[i][1]
             huecos_disponibles = 0
+            talones_disponibles = 0
+            carros_llevar = 0
             print("Huecos que hay en total:", huecos_totales)
 
-            while columna < 11:
-                # Si coincide el material
-                if huecos[columna] == maquinas[i][2]:
-                    totales = totales + huecos[columna + 1]
-                    print("Talones totales en la máquina:", totales)
-                    columna = columna + 2
-                else:
-                    columna = columna + 2
-                if huecos[columna] == 'VACIO':
+            # Recorro los huecos para la máquina que estoy evaluando
+            for b in range(len(huecos)):
+                # Cuento los talones totales de ese material que hay en la máquina
+                if huecos[b][2] == maquinas[i][2]:
+                    cub_disponibles = cub_disponibles + huecos[b][3]
+                # Cuento los huecos ocupados
+                if huecos[b][2] == 'VACIO':
                     huecos_disponibles = huecos_disponibles + 1
-                    print("Huecos vacíos en máquina:", huecos_disponibles)
+            print("Huecos disponibles", huecos_disponibles)
 
-            totales = totales / 2
-            print("¿Para cuántas cubiertas tengo material?", totales)
+            cub_disponibles = int(cub_disponibles / 2)
+            print("¿Para cuántas cubiertas tengo material?", cub_disponibles)
 
-            if totales < cub:
-                carros_totales = math.ceil((maquinas[i][4] - maquinas[i][5]) * 2 / 140)
-                print("Carros totales a llevar:", carros_totales)
+            # Vamos a calcular el número de carros que tenemos que llevar
+            # Si el número de cubiertas que puedo hacer (cub_disponibles) es menor que el número de cubiertas pendientes (cub)
+            if cub_disponibles < cub:
+                # Cada cubierta necesita 2 talones
+                # Cuento los talones que tengo que llevar
+                talonesTotales_llevar = (maquinas[i][4] - maquinas[i][5]) * 2
+                print("Talones totales a llevar", talonesTotales_llevar)
 
-                columna = 1
-                #cub_disponibles = 0
+                # Cuento los talones que ya tengo en la máquina de ese material
+                for c in range(len(huecos)):
+                    # Si coincide el material sumo el número de talones
+                    if huecos[c][2] == maquinas[i][2]:
+                        talones_disponibles = talones_disponibles + huecos[c][3]
+                        print("talones disponibles:", talones_disponibles)
+                        # Talones que tengo que llevar menos los que tengo disponibles en la máquina
+                        talones_llevar = talonesTotales_llevar - talones_disponibles
+                        print("Talones a llevar", talones_llevar)
+                        # Sabiendo que cada carro contiene 140 talones, calculo el número de carro que tengo que llevar
+                        carros_totales = math.ceil(talones_llevar / 140)
+                        print("Carros a totales", carros_totales)
+                        # Puedo llevar como máximo tantos carros como huecos vacío haya
+                        if carros_totales <= huecos_disponibles:
+                            carros_llevar = carros_totales
+                        else:
+                            carros_llevar = huecos_disponibles
 
-                ubicacion = ""
-                while columna < 11:
-                    if huecos[columna] == maquinas[i][2]:
-                        cub_disponibles = cub_disponibles + huecos[columna + 1]
-                        print("cub_disponibles:", cub_disponibles)
-                        carros_disponibles = math.floor(cub_disponibles / 140)
-                        print("Carros que hay en máquina:", carros_disponibles)
-                        carros_llevar = carros_totales - carros_disponibles
-                        print("Carros totales a llevar - carros que hay en máquina: ", carros_llevar)
-                        columna = columna + 2
-                    else:
-                        columna = columna + 2
+                        print("Carros llevar", carros_llevar)
 
-                print("")
-                print("huecos disponibles: ", huecos_disponibles)
-                print("carros a llevar", carros_llevar)
-                if huecos_disponibles > carros_llevar or huecos_disponibles == carros_llevar:
-                    carros = carros_llevar
-                    print("carros", carros)
-                else:
-                    carros = huecos_disponibles
-                    print("carros", carros)
-
-            # AÑADIR A LA TABLA MATERIALES PARA QUE LOS ENCUENTRE
-
+                # Busco en la tabla materiales el stock de ese material y su ubicación
                 sql = "SELECT * FROM MATERIALES WHERE CODIGO='" + maquinas[i][2] + "' "
                 cursor.execute(sql)
                 materiales = cursor.fetchall()
 
                 stock = 0
-                for c in range(len(materiales)):
+                ubicacion = ""
+                for d in range(len(materiales)):
                     # Guarda en ubicación donde más disponibles haya
-                    print("materiales[c][3]", materiales[c][3])
-                    if materiales[c][3] > stock:
-                        stock = materiales[c][3]
-                        ubicacion = materiales[c][2]
+                    print("materiales[d][3]", materiales[d][3])
+                    if materiales[d][3] > stock:
+                        stock = materiales[d][3]
+                        ubicacion = materiales[d][2]
                         print("ubicacion", ubicacion)
                         print("stock", stock)
 
-                listaOrdenes.append((maquina, material, carros, ubicacion, stock, cub_disponibles, pendientes, prioridad))
+                """ SI EL NÚMERO DE CUBIERTAS QUE TIENE PARA HACER ES MAYOR O IGUAL QUE 210 NO GENERA ORDEN """
+                if cub_disponibles < 210 :
+                    listaOrdenes.append(
+                        (maquina, material, carros_llevar, ubicacion, stock, cub_disponibles, pendientes, prioridad))
 
-                print("listaOrdenes", listaOrdenes)
+                    print("listaOrdenes", listaOrdenes)
 
-        """ ORDENAR LAS ÓRDENES ANTES DE VISUALIZARLAS """
+        # ORDENAR LAS ÓRDENES ANTES DE VISUALIZARLAS
         # Coloca en primer lugar las que menos material tienen para hacer cubiertas
         # Si coincide, pone en primer lugar la que mayor prioridad tiene
         listaOrdenesOrdenada = sorted(listaOrdenes, key=lambda x: (x[5], -x[7]))
@@ -185,20 +200,22 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Añado las órdenes a la tabla
         self.visualizarOrdenes(listaOrdenesOrdenada)
-        # self.visualizarOrdenes(listaOrdenes)
+
+    """ FUNCIÓN QUE AÑADE A LA TABLA Y MUESTRA EN PANTALLA LAS ÓRDENES GENERADAS """
 
     def visualizarOrdenes(self, listaOrdenesOrdenada):
-        # def visualizarOrdenes(self, listaOrdenes):
+        self.tableWidget.setRowCount(len(listaOrdenesOrdenada))
         for fila in range(len(listaOrdenesOrdenada)):
             for columna in range(8):
-                self.tableWidget.setItem(fila, columna, QtWidgets.QTableWidgetItem(str(listaOrdenesOrdenada[fila][columna])))
+                # Añado la orden a la tabla
+                self.tableWidget.setItem(fila, columna,
+                                         QtWidgets.QTableWidgetItem(str(listaOrdenesOrdenada[fila][columna])))
                 # Si el número de cubiertas que puede hacer con el material que tiene es inferior a 20 cambio el color a amarillo
                 if listaOrdenesOrdenada[fila][5] < 20 or listaOrdenesOrdenada[fila][5] == 20:
                     self.tableWidget.item(fila, columna).setBackground(QColor("gold"))
                 # Si no hay material disponible en stock cambio a rojo
                 if listaOrdenesOrdenada[fila][4] == 0:
                     self.tableWidget.item(fila, columna).setBackground(QColor("red"))
-
 
 
 if __name__ == "__main__":
