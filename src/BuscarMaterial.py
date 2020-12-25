@@ -1,4 +1,3 @@
-
 import os
 import sqlite3
 import sys
@@ -13,41 +12,52 @@ from BuscarMaterial_ui import Ui_MainWindow
 class BuscarMaterialWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
+        self.comboBox = QtWidgets.QComboBox()
         self.setupUi(self)
         # Método encargado de generar la interfaz
-        #uic.loadUi("BuscarMaterial.ui", self)
-        #self.cargarInterfaz()
-        #self.ui = Ui_MainWindow()
-        #self.ui.setupUi(self)
-        #self.ui.btn_Recoger.clicked(self.recogerMaterial())
-        self.tabla()
+        # uic.loadUi("BuscarMaterial.ui", self)
+        self.mostrarOtrasUbicaciones()
         self.btn_Recoger.clicked.connect(self.recogerMaterial)
         self.btn_Volver.clicked.connect(self.volver)
-        global maq, material, max_carros
+        # global maq, material, max_carros
 
+    """ FUNCIÓN PARA CONECTAR CON LA BASE DE DATOS """
 
+    @staticmethod
+    def conectarBD():
+        global con, cur
+        try:
+            con = sqlite3.connect('Y:\LucErik.db')
+            cur = con.cursor()
+        except sqlite3.OperationalError:
+            sys.exit()
+        return cur
 
-    def conectarBD(self):
-        con = sqlite3.connect('Y:\LucErik.db')
-        cursor = con.cursor()
-        return cursor
+    """ FUNCIÓN QUE CIERRA LA VENTANA ACTUAL """
 
     def volver(self):
         self.close()
 
+    """ FUNCIÓN QUE ACTUALIZA LOS HUECOS DE LAS MÁQUINAS CUANDO SE QUITA MATERIAL DE ELLAS
+    ACTUALIZA EL STOCK EN LA TABLA MATERIALES """
+
     def recogerMaterial(self):
-        # Recorro la tabla
+        # Guardo en máquina el primer valor pasado como parámetro
         maquina = sys.argv[1]
+        # Guardo en filas el número de filas de la tabla
         filas = self.tableWidget.rowCount()
         print("filas: ", filas)
+
+        # Recorro la tabla
         for i in range(filas):
+            # Guardo en valor, el número seleccionado en la lista desplegable
             widget = self.tableWidget.cellWidget(i, 3)
             valor = int(widget.currentText())
             print("Valor: ", valor)
             print("Quitar:", valor)
-            # Si el valor es mayor que 0
+
+            # Si el valor es mayor que 0, es decir, vamos a quitar algún carro
             if valor > 0:
-                print("Guardo los datos")
                 # Guardo los datos
                 material = self.tableWidget.item(i, 0).text()
                 print("Material: ", material)
@@ -56,140 +66,125 @@ class BuscarMaterialWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 stock = int(self.tableWidget.item(i, 2).text()) - valor
                 print("Stock:", stock)
 
-
                 # Descuento el material de donde lo he cogido: tabla MATERIALES
                 cursor = self.conectarBD()
                 # Si la RTB se ha quedado sin stock borro el registro de la tabla MATERIALES
-                if (stock == 0):
-                    sql = "DELETE FROM MATERIALES WHERE CODIGO= '"+str(material)+"' AND ORIGEN= '"+str(ubicacion)+"'"
+                if stock == 0:
+                    sql = "DELETE FROM MATERIALES WHERE CODIGO= '" + str(material) + "' AND ORIGEN= '" + str(
+                        ubicacion) + "'"
                     cursor.executescript(sql)
 
                 # Sino, actualizo el material
                 else:
-                    sql = "UPDATE MATERIALES SET STOCK='"+str(stock)+"' WHERE CODIGO= '"+str(material)+"' AND ORIGEN= '"+str(ubicacion)+"' "
+                    sql = "UPDATE MATERIALES SET STOCK='" + str(stock) + "' WHERE CODIGO= '" + str(
+                        material) + "' AND ORIGEN= '" + str(ubicacion) + "' "
                     cursor.executescript(sql)
 
-
-                """En el caso de que lo haya recogido de una máquina actualizo sus huecos"""
-                """Dejo vacíos los huecos de donde he quitado carros"""
+                # En el caso de que lo haya recogido de una máquina actualizo sus huecos
+                # Dejo vacíos los huecos de donde he quitado carros
                 # Recorro la tabla huecos y pongo el material encontrado a VACIO tantas veces como carros se hayan quitado
-                sql = "SELECT * FROM HUECOS WHERE ID= '"+str(ubicacion)+"' "
+                sql = "SELECT * FROM HUECOS WHERE ID= '" + str(
+                    ubicacion) + "' AND HUECO<>'H1' AND MATERIAL= '" + material + "' "
                 cursor.execute(sql)
                 resul = cursor.fetchall()
-                field_names = [i[0] for i in cursor.description]
                 print("resul", resul)
                 # De esta forma no guarda valores vacíos en huecos
                 if len(resul) != 0:
                     huecos = resul
                     print("HUECOS: ", huecos)
 
-                    columna = 3
+                    print("Máquina a la que llevar: ", maquina)
+                    # Lo llevo a la máquina que corresponde
+
+                    # Recorro la tabla huecos para esa máquina y buscar los huecos vacíos
+                    sql = "SELECT * FROM HUECOS WHERE ID= '" + maquina + "' "
+                    cursor.execute(sql)
+                    destino = cursor.fetchall()
+                    print("Destino", destino)
+
                     v = valor
-                    while columna < 11 and v > 0:
-                        if huecos[0][columna] == material:
-                            print("huecos[0][columna]", huecos[0][columna])
-                            print("huecos[0][columna+1]", huecos[0][columna+1])
-                            print("field_names[columna]", field_names[columna])
-                            print("huecos[0][0]", huecos[0][0])
-                            print("Máquina a la que llevar: ", maquina)
+                    for b in range(len(huecos)):
+                        print("b", b)
+                        for a in range(len(destino)):
+                            print("a", a)
+                            print("destino[a][2]", destino[a][2])
+                            if destino[a][2] == 'VACIO' and v > 0:
+                                print("material", material)
+                                print("destino[a][1]", destino[a][1])
+                                print("huecos[a][3]", huecos[b][3])
+                                sql = "UPDATE HUECOS SET MATERIAL='" + material + "', CANTIDAD='" + str(
+                                    huecos[b][3]) + "' WHERE ID='" + maquina + "' AND HUECO='" + destino[a][1] + "'"
+                                cursor.executescript(sql)
+                                sql = "SELECT * FROM HUECOS WHERE ID= '" + maquina + "' "
+                                cursor.execute(sql)
+                                destino = cursor.fetchall()
+                                print("Destino", destino)
 
-                            # Lo llevo a la máquina que corresponde
-                            sql = "SELECT * FROM HUECOS WHERE ID= '"+maquina+"' "
-                            cursor.execute(sql)
-                            destino = cursor.fetchall()
-                            print("Destino", destino)
-                            field_namesDestino = [i[0] for i in cursor.description]
-                            c = 1
-                            añadido = False
-                            while c < 11:
-                                print("c", c)
-                                print("destino[0][c]", destino[0][c])
-                                print("field_namesDestino[c]", field_namesDestino[c])
-                                print("field_namesDestino[c+1]", field_namesDestino[c+1])
-                                print("huecos[0][columna]", huecos[0][columna])
-                                print("huecos[0][columna+1]", huecos[0][columna+1])
-                                if destino[0][c] == 'VACIO':
-                                    print("Aquí")
-                                    sql = "UPDATE HUECOS SET '"+field_namesDestino[c]+"'='"+huecos[0][columna]+"' WHERE ID='"+maquina+"' "
-                                    cursor.executescript(sql)
-                                    print("Aquí")
-                                    sql = "UPDATE HUECOS SET '" + field_namesDestino[c+1] + "'='" + str(huecos[0][
-                                        columna+1]) + "' WHERE ID='" + maquina + "' "
-                                    cursor.executescript(sql)
-                                    print("Aquí")
-                                    print("destino[0][c]", destino[0][c])
-                                    break
-                                    c = c + 2
-                                else:
-                                    c = c + 2
+                                v = v - 1
 
-                            # Borro de la máquina a la que se los he quitado
-                            sql = "UPDATE HUECOS SET '"+field_names[columna]+"'='VACIO' WHERE ID='"+str(huecos[0][0])+"' "
-                            cursor.executescript(sql)
-                            sql = "UPDATE HUECOS SET '"+field_names[columna+1]+"'=0 WHERE ID='"+str(huecos[0][0])+"' "
-                            cursor.executescript(sql)
-
-                            v = valor - 1
-                            print("valor", v)
-                            columna = columna + 2
-                        else:
-                            columna = columna + 2
+                                # Pongo los huecos en vacío a la máquina a la que se los he quitado
+                                print("huecos[b][1]", huecos[b][1])
+                                sql = "UPDATE HUECOS SET MATERIAL='VACIO', CANTIDAD=0 WHERE ID='" + ubicacion + "' AND HUECO='" + \
+                                      huecos[b][1] + "'"
+                                cursor.executescript(sql)
+                                break
 
         self.close()
 
+    """ FUNCIÓN QUE AÑADE A LA TABLA Y MUESTRA EN PANTALLA LAS UBICACIONES Y CANTIDAD DEL MATERIAL ENCONTRADO """
 
-    # Cargo los datos en la tabla
-    def tabla(self):
-        maq = sys.argv[1]
-        print("Maquina: ", str(maq))
+    def mostrarOtrasUbicaciones(self):
+        # Guardo en maq el primer valor pasado como parámetro
+        maquina = sys.argv[1]
+        print("Maquina: ", str(maquina))
+        # Guardo en material el segundo valor pasado como parámetro
         material = sys.argv[2]
         print("Material: ", material)
+        # Guardo en max_carros el tercer valor pasado como parámetro
         max_carros = int(sys.argv[3])
+        # Guardo en ubicacion el cuarto valor pasado como parámetro
         ubicacion = sys.argv[4]
 
-
         cursor = self.conectarBD()
-        sql = "SELECT CODIGO, ORIGEN, STOCK FROM MATERIALES WHERE CODIGO= '"+material+"' AND ORIGEN<> '"+ubicacion+"' "
+        # Obtengo en qué RTBS se encuentra ese material y cantidades aparte de la que se muestra en la orden
+        sql = "SELECT CODIGO, ORIGEN, STOCK FROM MATERIALES WHERE CODIGO= '" + material + "' AND ORIGEN<> '" + ubicacion + "' "
         cursor.execute(sql)
         items_materiales = cursor.fetchall()
         print("Materiales de tabla: ", items_materiales)
 
         items_huecos = []
 
+        # Obtengo las máquinas en las que se encuentra el material
         # De esta forma en la tabla no muestra el stock de ese material que hay en la propia máquina, es decir, la que está seleccionada
-        sql = "SELECT ID FROM MAQUINAS WHERE ID<> '"+maq+"' AND MAT_ACTUAL= '"+str(material)+"' OR MAT_PROX= '"+str(material)+"' "
+        sql = "SELECT ID FROM MAQUINAS WHERE ID<> '" + maquina + "' AND MAT_ACTUAL= '" + str(
+            material) + "' OR MAT_PROX= '" + str(material) + "' "
         cursor.execute(sql)
         id_maquina = cursor.fetchall()
         print("id_maquina", id_maquina)
 
+        # Para cada una de las máquinas obtengo las filas de la tabla huecos para esa máquina y ese material
+        # Obtengo en qué máquinas y cantidades de ese material hay aparte de la que se muestra en la orden
         for a in range(len(id_maquina)):
-            sql = "SELECT * FROM HUECOS WHERE ID= '"+str(id_maquina[a][0])+"' "
+            sql = "SELECT * FROM HUECOS WHERE ID= '" + str(id_maquina[a][0]) + "' AND MATERIAL= '" + str(
+                material) + "' AND HUECO<>'H1'"
             cursor.execute(sql)
             items_huecos = items_huecos + cursor.fetchall()
             print("Materiales en huecos: ", items_huecos)
 
-
         cont_carros = 0
-        for b in range (len(items_huecos)):
-            print("b: ", b)
+        for b in range(len(items_huecos)):
             # Empiezo a contar los carros de ese material que hay en una máquina a partir del segundo hueco, porque el primero es el que está usando y no se le puede quitar
-            c = 3
-            while c < 11:
-                print("c: ", c)
-                print("items_huecos[b][c]", items_huecos[b][c])
-                if items_huecos[b][c] == material:
-                    cont_carros = cont_carros + 1
-                    mat = material
-                    maquina = id_maquina[b]
-                    c = c + 2
-                else:
-                    c = c + 2
-            if cont_carros != 0:
-                items_materiales.append((mat, maquina[0], cont_carros))
-                print("items_materiales: ", items_materiales)
+            print("items_huecos[b][2]", items_huecos[b][2])
+            cont_carros = cont_carros + 1
+            print("cont_carros", cont_carros)
+            # mat = material
+            print("mat", material)
+            maquina = id_maquina[0]
+            print("maquina", maquina)
 
-
-
+        if cont_carros != 0:
+            items_materiales.append((material, maquina[0], cont_carros))
+            print("items_materiales: ", items_materiales)
 
         self.tableWidget.setRowCount(len(items_materiales))
         for fila in range(len(items_materiales)):
@@ -200,9 +195,8 @@ class BuscarMaterialWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Que sólo pueda quitar como mucho el número de carros que tiene que llevar aunque haya más stock
                 for x in range(items_materiales[fila][2]):
                     if x < max_carros:
-                        self.comboBox.addItem(str(x+1))
+                        self.comboBox.addItem(str(x + 1))
                 self.tableWidget.setCellWidget(fila, 3, self.comboBox)
-
 
 
 if __name__ == "__main__":
