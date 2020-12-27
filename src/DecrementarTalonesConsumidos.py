@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Dec 10 22:00:08 2020
+Clase que decrementa en 2 el número de talones cada vez que se fabrica una cubierta
+e incrementa en 1 el número de cubiertas producidas si hay material para ello en la máquina.
 
 @author: Carolina Colina Zamorano
 """
@@ -12,6 +13,8 @@ class DecrementarTalonesConsumidos:
 
     @staticmethod
     def decrementar():
+
+        # Conexión con la base de datos
         global con, cursor
         try:
             con = sqlite3.connect('Y:\LucErik.db')
@@ -38,6 +41,7 @@ class DecrementarTalonesConsumidos:
                 print("Talones: ", talones)
                 print("Máquina: ", cubiertas[i][0])
 
+                # Si en el primer hueco no hay talones, inserto la palabra 'VACIO' en el hueco 'H1'
                 if talones[0][3] == 0:
                     sql = "UPDATE HUECOS SET MATERIAL='VACIO' WHERE HUECO='H1' AND ID='" + cubiertas[i][0] + "'"
                     cursor.executescript(sql)
@@ -66,9 +70,9 @@ class DecrementarTalonesConsumidos:
                     b = 1
                     while b < (len(talones)):
                         print("talones[b][2]", talones[b][2])
+
                         # Si lo encuentro intercambio los huecos
                         if talones[b][2] == cubiertas[i][2]:
-                            """INTERCAMBIO"""
                             # Guardo lo que hay en el primer hueco
                             material = talones[0][2]
                             print("MATERIAL:", material)
@@ -86,10 +90,12 @@ class DecrementarTalonesConsumidos:
                             cursor.executescript(sql)
 
                             b = b + 1
+
                         else:
                             b = b + 1
 
             # Si se ha llegado al tope de cubiertas del primer material, es decir, del que se está produciendo
+            # Cambio los materiales: En MAT_ACTUAL se coloca MAT_PROX
             else:
                 print("Si ya se han hecho todas las cubiertas de esa medida", cubiertas[i][5], "=", cubiertas[i][4])
                 print("Cambio los materiales de la máquina")
@@ -99,11 +105,12 @@ class DecrementarTalonesConsumidos:
                 cursor.executescript(sql)
                 sql = "UPDATE MAQUINAS SET PROD_ACTUAL=0 WHERE ID='" + cubiertas[i][0] + "'"
                 cursor.executescript(sql)
-                sql = "UPDATE MAQUINAS SET MAT_PROX=NULL WHERE ID='" + cubiertas[i][0] + "'"
+                sql = "UPDATE MAQUINAS SET MAT_PROX='NULL' WHERE ID='" + cubiertas[i][0] + "'"
                 cursor.executescript(sql)
                 sql = "UPDATE MAQUINAS SET TOTALES_PROX=0 WHERE ID= '" + cubiertas[i][0] + "' "
                 cursor.executescript(sql)
 
+                # Una vez cambiado el material, vuelvo a recuperar los datos actuales
                 sql = "SELECT * FROM MAQUINAS WHERE ID = '" + cubiertas[i][0] + "' "
                 cursor.execute(sql)
                 cubiertas = cursor.fetchall()

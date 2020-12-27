@@ -13,16 +13,14 @@ class BuscarMaterialWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         self.comboBox = QtWidgets.QComboBox()
-        self.setupUi(self)
         # Método encargado de generar la interfaz
-        # uic.loadUi("BuscarMaterial.ui", self)
+        self.setupUi(self)
         self.mostrarOtrasUbicaciones()
         self.btn_Recoger.clicked.connect(self.recogerMaterial)
         self.btn_Volver.clicked.connect(self.volver)
         # global maq, material, max_carros
 
     """ FUNCIÓN PARA CONECTAR CON LA BASE DE DATOS """
-
     @staticmethod
     def conectarBD():
         global con, cur
@@ -34,13 +32,11 @@ class BuscarMaterialWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         return cur
 
     """ FUNCIÓN QUE CIERRA LA VENTANA ACTUAL """
-
     def volver(self):
         self.close()
 
     """ FUNCIÓN QUE ACTUALIZA LOS HUECOS DE LAS MÁQUINAS CUANDO SE QUITA MATERIAL DE ELLAS
     ACTUALIZA EL STOCK EN LA TABLA MATERIALES """
-
     def recogerMaterial(self):
         # Guardo en máquina el primer valor pasado como parámetro
         maquina = sys.argv[1]
@@ -132,7 +128,6 @@ class BuscarMaterialWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.close()
 
     """ FUNCIÓN QUE AÑADE A LA TABLA Y MUESTRA EN PANTALLA LAS UBICACIONES Y CANTIDAD DEL MATERIAL ENCONTRADO """
-
     def mostrarOtrasUbicaciones(self):
         # Guardo en maq el primer valor pasado como parámetro
         maquina = sys.argv[1]
@@ -168,23 +163,33 @@ class BuscarMaterialWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             sql = "SELECT * FROM HUECOS WHERE ID= '" + str(id_maquina[a][0]) + "' AND MATERIAL= '" + str(
                 material) + "' AND HUECO<>'H1'"
             cursor.execute(sql)
-            items_huecos = items_huecos + cursor.fetchall()
-            print("Materiales en huecos: ", items_huecos)
+            items = cursor.fetchall()
+            print("items", items)
+            if len(items) > 0:
+                items_huecos.append(items)
+                print("Materiales en huecos: ", items_huecos)
 
-        cont_carros = 0
+
         for b in range(len(items_huecos)):
+            print("len(items_huecos)", len(items_huecos))
             # Empiezo a contar los carros de ese material que hay en una máquina a partir del segundo hueco, porque el primero es el que está usando y no se le puede quitar
-            print("items_huecos[b][2]", items_huecos[b][2])
-            cont_carros = cont_carros + 1
-            print("cont_carros", cont_carros)
-            # mat = material
-            print("mat", material)
-            maquina = id_maquina[0]
-            print("maquina", maquina)
 
-        if cont_carros != 0:
-            items_materiales.append((material, maquina[0], cont_carros))
-            print("items_materiales: ", items_materiales)
+            cont_carros = 0
+            for c in range(len(items_huecos[b])):
+                print("items_huecos[b]", items_huecos[b])
+                print("items_huecos[b][c]", items_huecos[b][c])
+                if items_huecos[b][c][2] == material:
+                    cont_carros = cont_carros + 1
+                    print("cont_carros", cont_carros)
+                    # mat = material
+                    print("mat", material)
+                    maquina = items_huecos[b][c][0]
+                    print("maquina", maquina)
+
+
+            if cont_carros != 0:
+                items_materiales.append((material, maquina, cont_carros))
+                print("items_materiales: ", items_materiales)
 
         self.tableWidget.setRowCount(len(items_materiales))
         for fila in range(len(items_materiales)):

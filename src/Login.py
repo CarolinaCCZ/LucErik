@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Dec 10 20:55:53 2020
+Clase que inicia el programa.
+Muestra una ventana para que el operario se loguee, una vez hecho se muestra la ventana Ordenes.
+En segundo plano se ejecutan los scripts DecrementarTalonesConsumidos e IncrementarTalonesFabricados
 
 @author: Carolina Colina Zamorano
 """
@@ -13,8 +15,10 @@ import time
 from PyQt5 import uic, QtWidgets
 from PyQt5.QtCore import QThread
 
-nombre: str = ""
-servicio: str = ""
+#nombre: str = ""
+#servicio: str = ""
+
+""" Proceso que incrementa el número de talones fabricados """
 
 
 class IncrementarTalonesFabricados(QThread):
@@ -24,7 +28,10 @@ class IncrementarTalonesFabricados(QThread):
     def run(self):
         while True:
             os.system('python IncrementarTalonesFabricados.py')
-            time.sleep(5)
+            time.sleep(3600)
+
+
+""" Proceso de decrementa el número de talones que se consumen e incrementa el número de cubiertas fabricadas """
 
 
 class DecrementarTalonesConsumidos(QThread):
@@ -34,7 +41,7 @@ class DecrementarTalonesConsumidos(QThread):
     def run(self):
         while True:
             os.system('python DecrementarTalonesConsumidos.py')
-            time.sleep(5)
+            time.sleep(3600)
 
 
 class LoginWindow(QtWidgets.QMainWindow):
@@ -60,8 +67,9 @@ class LoginWindow(QtWidgets.QMainWindow):
 
         time.sleep(1)
 
-    def conectarBD(self):
+    """ Conexión con la base de datos """
 
+    def conectarBD(self):
         global con, cursorServicios, cursorOperarios
         try:
             con = sqlite3.connect('Y:\LucErik.db')
@@ -104,19 +112,22 @@ class LoginWindow(QtWidgets.QMainWindow):
                 # Guardo el nombre del servicio en una variable global
                 self.setServicio(service)
 
-    # Guarda el nombre del operario
+    """ Guarda el nombre del operario """
+
     @staticmethod
     def setNombre(name):
         global nombre
         nombre = name
 
-    # Guarda el nombre del servicio
+    """ Guarda el nombre del servicio """
+
     @staticmethod
     def setServicio(service):
         global servicio
         servicio = service
 
-    # La ventana actual se cierra y se abre la ventana con el listado de las órdenes.
+    """ La ventana actual se cierra y se abre la ventana con el listado de las órdenes. """
+
     def abrirOrdenesWindow(self):
         self.close()
         # Abro la ventana con las órdenes y le paso el nombre del operario y el nombre del servicio

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Dec 10 22:00:08 2020
+Clase que incrementa el número de talones fabricados
+Cada 20 minutos se incrementa en 1 el número de carros que se están produciendo en cada RTB
 
 @author: Carolina Colina Zamorano
 """
@@ -15,25 +16,24 @@ class IncrementarTalonesFabricados:
 
     @staticmethod
     def incrementar():
+
+        # Conexión con la base de datos
         global con, cursor
         try:
             con = sqlite3.connect('Y:\LucErik.db')
             cursor = con.cursor()
-            cursor2 = con.cursor()
-            cursor3 = con.cursor()
         except sqlite3.OperationalError:
             sys.exit()
-
 
         sql = "SELECT * FROM LISTADO_RTBS"
         cursor.execute(sql)
         listadoRTBS = cursor.fetchall()
         print("Listado RTBS: ", listadoRTBS)
-        #print("listadoRTBS[1][0]: ", listadoRTBS[1][0]) # rtb2
 
         # Recorro el listado de RTB'S
         for i in range(len(listadoRTBS)):
-            sql = "SELECT * FROM PEDIDO WHERE ID= '"+str(listadoRTBS[i][0])+"' "
+            print("i: ", i)
+            sql = "SELECT ID FROM PRODUCCION_TALONES WHERE ID= '" + str(listadoRTBS[i][0]) + "' "
             cursor.execute(sql)
             rtb = cursor.fetchall()
             print("")
@@ -42,26 +42,27 @@ class IncrementarTalonesFabricados:
             # Para cada una de las máquinas voy incrementando el número de carros que se producen.
             # Se incrementa en 1 cada 20 minutos
             for a in range(len(rtb)):
+                print("a: ", a)
+                print("rtb[0][0]", rtb[0][0])
                 sql = "SELECT * FROM PRODUCCION_TALONES WHERE ID= '"+rtb[a][0]+"' "
                 cursor.execute(sql)
                 ped = cursor.fetchall()
                 print("ped: ", ped)
-                if ped[a][3] < ped[a][4]:
-                    sql = "UPDATE PRODUCCION_TALONES SET PRODUCIDOS=PRODUCIDOS+1 WHERE ID_MATERIAL= '"+ped[a][1]+"' "
-                    cursor.executescript(sql)
 
+                # Si los que se han producido son menos que los totales incremento
+                if ped[a][3] < ped[a][4]:
+                    print("ped[a][1]: ", ped[a][1])
+                    sql = "UPDATE PRODUCCION_TALONES SET PRODUCIDOS=PRODUCIDOS+1 WHERE ID_MATERIAL= '"+str(ped[a][1])+"' AND ID= '"+rtb[a][0]+"'"
+                    cursor.executescript(sql)
 
                     # He incrementado el número de carros en uno del material con el que está trabajando
                     # Tengo que incrementarlo en la tabla MATERIALES
                     # Obtengo lo que está produciendo la RTB
-                    sql = "SELECT * FROM PRODUCCION_TALONES WHERE ID= '"+listadoRTBS[i][0]+"' "
+                    sql = "SELECT * FROM PRODUCCION_TALONES WHERE ID= '"+rtb[a][0]+"' "
                     cursor.execute(sql)
                     prod = cursor.fetchall()
                     print("")
-                    print(listadoRTBS[i])
-                    print("i: ", i)
                     print("prod", prod)
-                    print("prod[a]", prod[i])
 
                     # Incremento los materiales
                     IncrementarTalonesFabricados.IncrementarMateriales(a, i, cursor, listadoRTBS, prod)
@@ -74,19 +75,19 @@ class IncrementarTalonesFabricados:
 
         con.close()
 
+    """ Método que incrementa en la tabla materiales a medida que se producen talones en las rtb's """
     @staticmethod
-    # Método que incrementa en la tabla materiales a medida que se producen talones en las rtb's
-    def IncrementarMateriales(a, i, cursor, listadoRTBS, prod):
+    def IncrementarMateriales(a, i, cur, listadoRTBS, prod):
         # Busco en la tabla MATERIALES si existe un material con ese código
-        cursor.execute("SELECT count(*) FROM MATERIALES WHERE CODIGO=?;", (prod[a][1],))
-        coinc_material = cursor.fetchall()
+        cur.execute("SELECT count(*) FROM MATERIALES WHERE CODIGO=?;", (prod[a][1],))
+        coinc_material = cur.fetchall()
         print("coinc_material", coinc_material[0][0])
         # Si NO EXISTE ese código en la tabla materiales, lo inserto
         if coinc_material[0][0] == 0:
             print("Insertamos nuevo resgistro")
             sql = "INSERT INTO MATERIALES (CODIGO, ORIGEN, STOCK) VALUES ('" + str(prod[a][1]) + "', '" + str(
                 listadoRTBS[i][0]) + "', '" + str(1) + "')"
-            cursor.executescript(sql)
+            cur.executescript(sql)
 
         # SI EXISTE ese código en la tabla MATERIALES
         else:
@@ -115,5 +116,4 @@ class IncrementarTalonesFabricados:
 
 
 if __name__ == "__main__":
-    #Prueba.__init__
     IncrementarTalonesFabricados.incrementar()

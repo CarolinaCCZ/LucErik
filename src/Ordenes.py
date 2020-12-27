@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Dec  5 13:28:13 2020
+Clase que muestra las órdenes en función de la necesidad de cada máquina
+Las órdenes se muestran por orden de necesidad y prioridad
 
 @author: Carolina Colina Zamorano
 """
@@ -24,7 +25,6 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         QtWidgets.QMainWindow.__init__(self)
         # Método encargado de generar la interfaz
         self.setupUi(self)
-        # uic.loadUi("Ordenes.ui", self)
         self.setNombreOperario()
         self.setNombreServicio()
         self.setHora()
@@ -45,51 +45,32 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             sys.exit()
         return cur
 
-    """ Función que busca el material en otras ubicaciones """
-    def buscar(self):
-        # Obtengo la fila seleccionada
-        row = self.tableWidget.currentRow()
-        # Saco la máquina
-        maquina = self.tableWidget.item(row, 0).text()
-        # Saco el material
-        material = self.tableWidget.item(row, 1).text()
-        # Saco los carros máximos que hay que llevar
-        max_carros = self.tableWidget.item(row, 2).text()
-        # Saco la ubicación
-        ubicacion = self.tableWidget.item(row, 3).text()
-        # Si no hay carros disponibles en ninguna parte le asigno el valor NULL para que no sea vacío
-        if len(ubicacion) == 0:
-            ubicacion = 'NULL'
-        # Paso como argumento el material que tiene que buscar
-        os.system('python BuscarMaterial.py' + " " + maquina + " " + material + " " + max_carros + " " + ubicacion)
-
-    # Función para añadir el nombre del Operario
+    """ Función para añadir el nombre del Operario """
     def setNombreOperario(self):
         # Nombre del Operario
         nombreOP = sys.argv[1] + " " + sys.argv[2] + " " + sys.argv[3]
         self.nombreOP.setText(nombreOP)
 
-    # Función para añadir el nombre del Servicio
+    """ Función para añadir el nombre del Servicio """
     def setNombreServicio(self):
         # Nombre del servicio
         serv = sys.argv[4]
         self.servicio.setText(serv)
 
-    # Función que crea el Timer para la hora
+    """ Función que crea el Timer para la hora """
     def setHora(self):
         # Creamos el 'Timer'
         timer = QTimer(self)
         timer.timeout.connect(self.displayTime)
         timer.start(1000)
 
-    # Función para mostrar la hora
+    """ Función para mostrar la hora """
     def displayTime(self):
         currentTime = QTime.currentTime()
         displayText = currentTime.toString('hh:mm:ss')
         self.hora.setText(displayText)
 
     """ FUNCIÓN QUE GENERA LAS ÓRDENES """
-
     def generarOrdenes(self):
         # Conexión con la base de datos
         cursor = OrdenesWindow.conectarBD()
@@ -111,6 +92,7 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             print("Cubiertas que faltan por hacer", cub)
 
             # Obtenemos los huecos pertenecientes a la máquina que estamos tratando
+            print(maquinas[i][0])
             sql = "SELECT * FROM HUECOS WHERE ID ='" + maquinas[i][0] + "'"
             cursor.execute(sql)
             huecos = cursor.fetchall()
@@ -185,8 +167,8 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                         print("ubicacion", ubicacion)
                         print("stock", stock)
 
-                """ SI EL NÚMERO DE CUBIERTAS QUE TIENE PARA HACER ES MAYOR O IGUAL QUE 210 NO GENERA ORDEN """
-                if cub_disponibles < 210 :
+                # SI EL NÚMERO DE CUBIERTAS QUE TIENE PARA HACER ES MAYOR O IGUAL QUE 210 NO GENERA ORDEN
+                if cub_disponibles < 140 and carros_llevar > 0:
                     listaOrdenes.append(
                         (maquina, material, carros_llevar, ubicacion, stock, cub_disponibles, pendientes, prioridad))
 
@@ -202,7 +184,6 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.visualizarOrdenes(listaOrdenesOrdenada)
 
     """ FUNCIÓN QUE AÑADE A LA TABLA Y MUESTRA EN PANTALLA LAS ÓRDENES GENERADAS """
-
     def visualizarOrdenes(self, listaOrdenesOrdenada):
         self.tableWidget.setRowCount(len(listaOrdenesOrdenada))
         for fila in range(len(listaOrdenesOrdenada)):
@@ -216,6 +197,27 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Si no hay material disponible en stock cambio a rojo
                 if listaOrdenesOrdenada[fila][4] == 0:
                     self.tableWidget.item(fila, columna).setBackground(QColor("red"))
+
+    """ Función que busca el material en otras ubicaciones """
+
+    def buscar(self):
+        # Obtengo la fila seleccionada
+        row = self.tableWidget.currentRow()
+        # Saco la máquina
+        maquina = self.tableWidget.item(row, 0).text()
+        # Saco el material
+        material = self.tableWidget.item(row, 1).text()
+        # Saco los carros máximos que hay que llevar
+        max_carros = self.tableWidget.item(row, 2).text()
+        # Saco la ubicación
+        ubicacion = self.tableWidget.item(row, 3).text()
+        # Si no hay carros disponibles en ninguna parte le asigno el valor NULL para que no sea vacío
+        if len(ubicacion) == 0:
+            ubicacion = 'NULL'
+        # Paso como argumento el material que tiene que buscar
+        os.system('python BuscarMaterial.py' + " " + maquina + " " + material + " " + max_carros + " " + ubicacion)
+
+
 
 
 if __name__ == "__main__":
