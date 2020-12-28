@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import QTableWidgetItem
 from Ordenes_ui import Ui_MainWindow
 from PyQt5.QtCore import QThread
 from PyQt5.QtGui import *
+from PyQt5.QtCore import pyqtSlot
 
 
 class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -30,7 +31,7 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setHora()
         self.generarOrdenes()
         self.btn_buscarMaterial.clicked.connect(self.buscar)
-        # self.btn_llevarMaterial.clicked.connect(self.llevarMaterial)
+        self.btn_llevarMaterial.clicked.connect(self.llevarMaterial)
         self.btn_actualizar.clicked.connect(self.generarOrdenes)
         # global maquinas, carros, listaOrdenes, carros_llevar, ubicacion, cub_disponibles
 
@@ -183,6 +184,15 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Añado las órdenes a la tabla
         self.visualizarOrdenes(listaOrdenesOrdenada)
 
+
+
+        """row = self.tableWidget.currentRow()
+        print("row seleccionada: ", row)
+        if row != -1:
+            self.btn_llevarMaterial.setEnabled(True)
+        else:
+            self.btn_llevarMaterial.setEnabled(False)"""
+
     """ FUNCIÓN QUE AÑADE A LA TABLA Y MUESTRA EN PANTALLA LAS ÓRDENES GENERADAS """
     def visualizarOrdenes(self, listaOrdenesOrdenada):
         self.tableWidget.setRowCount(len(listaOrdenesOrdenada))
@@ -197,6 +207,82 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Si no hay material disponible en stock cambio a rojo
                 if listaOrdenesOrdenada[fila][4] == 0:
                     self.tableWidget.item(fila, columna).setBackground(QColor("red"))
+        self.tableWidget.clearSelection()
+
+        # Controla que se haya seleccionado una fila de la tabla para habilitar los botones llevar material y buscar meterial
+        self.tableWidget.setSelectionBehavior(QtWidgets.QTableWidget.SelectRows)
+        self.tableWidget.selectionModel().selectionChanged.connect(self.itemSeleccionado)
+
+    @pyqtSlot()
+    def itemSeleccionado(self):
+        self.btn_llevarMaterial.setEnabled(
+            bool(self.tableWidget.selectionModel().selectedRows()))
+        self.btn_buscarMaterial.setEnabled(
+            bool(self.tableWidget.selectionModel().selectedRows()))
+
+
+    """ Función para llevar el material """
+
+    def llevarMaterial(self):
+        # Obtengo la fila seleccionada
+        row = self.tableWidget.currentRow()
+        # Saco la máquina
+        maquina = self.tableWidget.item(row, 0).text()
+        print("maquina", maquina)
+        # Saco el material
+        material = self.tableWidget.item(row, 1).text()
+        print("material", material)
+        # Saco los carros máximos que hay que llevar
+        max_carros = int(self.tableWidget.item(row, 2).text())
+        print("max_carros", max_carros)
+        # Saco la ubicación
+        ubicacion = self.tableWidget.item(row, 3).text()
+        print("ubicación", ubicacion)
+
+        cursor = OrdenesWindow.conectarBD()
+
+        sql = "SELECT * FROM MATERIALES WHERE CODIGO= '" + material + "' AND ORIGEN='" + ubicacion + "'"
+        cursor.execute(sql)
+        resul = cursor.fetchall()
+        print("resul", resul)
+        total = resul[0][3] - max_carros
+        print("total", total)
+
+
+        # Primero descuento el material que he cogido
+        sql = "UPDATE MATERIALES SET STOCK='" + str(total) + "' WHERE CODIGO= '" + str(
+            material) + "' AND ORIGEN= '" + str(ubicacion) + "' "
+        cursor.executescript(sql)
+
+        # En el caso de que algún material haya quedado con stock a 0, lo eliminamos de la lista materiales
+        sql = "DELETE FROM MATERIALES WHERE STOCK=0"
+        cursor.executescript(sql)
+
+        # A continuación relleno los huecos de la máquina a la que llevo el material
+        sql = "SELECT * FROM HUECOS WHERE ID= '" + maquina + "' "
+        cursor.execute(sql)
+        huecos = cursor.fetchall()
+        print("huecos", huecos)
+        print("len(huecos)", len(huecos))
+
+        cont_carros = 0
+        for z in range(len(huecos)):
+            print("huecos[z][0]", huecos[z][0])
+            print("huecos[z][1]", huecos[z][1])
+            print("huecos[z][2]", huecos[z][2])
+            print("huecos[z][3]", huecos[z][3])
+            print("max_carros", max_carros)
+            if huecos[z][2] == 'VACIO' and cont_carros < max_carros:
+                print("Es vacío")
+                sql = "UPDATE HUECOS SET MATERIAL='"+material+"', CANTIDAD=140 WHERE ID='"+maquina+"' AND HUECO='"+huecos[z][1]+"' "
+                cursor.executescript(sql)
+                cont_carros = cont_carros + 1
+            else:
+                print("No es vacío")
+
+        # Actualizo la tabla órdenes
+        self.generarOrdenes()
+
 
     """ Función que busca el material en otras ubicaciones """
 
@@ -217,6 +303,8 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Paso como argumento el material que tiene que buscar
         os.system('python BuscarMaterial.py' + " " + maquina + " " + material + " " + max_carros + " " + ubicacion)
 
+        # Quito la selección de la fila anteriormente seleccionada
+        self.tableWidget.clearSelection()
 
 
 
