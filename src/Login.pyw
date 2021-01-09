@@ -11,12 +11,15 @@ import os
 import sqlite3
 import sys
 import time
+import win32gui, win32con
 
-from PyQt5 import uic, QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QThread
+from Login_ui import Ui_MainWindow
+from PyQt5.QtGui import *
 
-#nombre: str = ""
-#servicio: str = ""
+# nombre: str = ""
+# servicio: str = ""
 
 """ Proceso que incrementa el número de talones fabricados """
 
@@ -44,11 +47,14 @@ class DecrementarTalonesConsumidos(QThread):
             time.sleep(3600)
 
 
-class LoginWindow(QtWidgets.QMainWindow):
+class LoginWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
+        # Evitar que muestre la consola durante la ejecución
+        hide = win32gui.GetForegroundWindow()
+        win32gui.ShowWindow(hide, win32con.SW_HIDE)
         # Método encargado de generar la interfaz
-        uic.loadUi("Login.ui", self)
+        self.setupUi(self)
         # self.setWindowTitle("Título")
         # self.showMaximized()
 
@@ -70,9 +76,9 @@ class LoginWindow(QtWidgets.QMainWindow):
     """ Conexión con la base de datos """
 
     def conectarBD(self):
-        global con, cursorServicios, cursorOperarios
+        global con, cursorServicios, cursorOperarios, name
         try:
-            con = sqlite3.connect('Y:\LucErik.db')
+            con = sqlite3.connect('sqlite/LucErik.db')
             cursorOperarios = con.cursor()
             cursorServicios = con.cursor()
         except sqlite3.OperationalError:
@@ -94,23 +100,33 @@ class LoginWindow(QtWidgets.QMainWindow):
         con.close()
 
         # Recorro la lista de operarios, obtengo el nombre del operario y lo muestro en pantalla
+        operarioEncontrado = False
         for i in listaOperarios:
             if i[1] == nop:
-                self.label_Nombre.setText(i[0])
-                self.label_Nombre.setVisible(True)
-                # Hago visible el botón Acceder que abrirá la ventana con las órdenes
-                self.btn_acceder.setVisible(True)
-
+                operarioEncontrado = True
                 # Guardo el nombre del operario en una variable global
                 name = i[0]
                 self.setNombre(name)
 
         # Recorro la lista de servicios y obtengo el nombre
+        servicioEncontrado = False
         for a in listaServicios:
             if a[1] == nsr:
+                servicioEncontrado = True
                 service = a[0]
                 # Guardo el nombre del servicio en una variable global
                 self.setServicio(service)
+
+        if operarioEncontrado == True and servicioEncontrado == True:
+            self.label_Nombre.setText(name)
+            self.label_Nombre.setVisible(True)
+            # Hago visible el botón Acceder que abrirá la ventana con las órdenes
+            self.btn_acceder.setVisible(True)
+        else:
+            self.label_Nombre.setText("Operario o Servicio incorrecto")
+            self.label_Nombre.setVisible(True)
+            self.n_operario.clear()
+            self.n_servicio.clear()
 
     """ Guarda el nombre del operario """
 
@@ -131,7 +147,7 @@ class LoginWindow(QtWidgets.QMainWindow):
     def abrirOrdenesWindow(self):
         self.close()
         # Abro la ventana con las órdenes y le paso el nombre del operario y el nombre del servicio
-        os.system('python Ordenes.py' + ' ' + nombre + ' ' + servicio)
+        os.system('python Ordenes.pyw' + ' ' + nombre + ' ' + servicio)
 
 
 if __name__ == "__main__":
@@ -139,3 +155,6 @@ if __name__ == "__main__":
     window = LoginWindow()
     window.show()
     app.exec_()
+    
+    
+    

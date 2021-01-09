@@ -11,6 +11,7 @@ import sys
 import math
 import time
 import os
+import win32gui, win32con
 
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QTimer, QTime
@@ -24,6 +25,9 @@ from PyQt5.QtCore import pyqtSlot
 class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
+        # Evitar que muestre la consola durante la ejecución
+        hide = win32gui.GetForegroundWindow()
+        win32gui.ShowWindow(hide , win32con.SW_HIDE)
         # Método encargado de generar la interfaz
         self.setupUi(self)
         self.setNombreOperario()
@@ -36,29 +40,33 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # global maquinas, carros, listaOrdenes, carros_llevar, ubicacion, cub_disponibles
 
     """ Función para conecetar con la base de datos """
+
     @staticmethod
     def conectarBD():
         global con, cur
         try:
-            con = sqlite3.connect('Y:\LucErik.db')
+            con = sqlite3.connect('sqlite/LucErik.db')
             cur = con.cursor()
         except sqlite3.OperationalError:
             sys.exit()
         return cur
 
     """ Función para añadir el nombre del Operario """
+
     def setNombreOperario(self):
         # Nombre del Operario
         nombreOP = sys.argv[1] + " " + sys.argv[2] + " " + sys.argv[3]
         self.nombreOP.setText(nombreOP)
 
     """ Función para añadir el nombre del Servicio """
+
     def setNombreServicio(self):
         # Nombre del servicio
         serv = sys.argv[4]
         self.servicio.setText(serv)
 
     """ Función que crea el Timer para la hora """
+
     def setHora(self):
         # Creamos el 'Timer'
         timer = QTimer(self)
@@ -66,12 +74,14 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         timer.start(1000)
 
     """ Función para mostrar la hora """
+
     def displayTime(self):
         currentTime = QTime.currentTime()
         displayText = currentTime.toString('hh:mm:ss')
         self.hora.setText(displayText)
 
     """ FUNCIÓN QUE GENERA LAS ÓRDENES """
+
     def generarOrdenes(self):
         # Conexión con la base de datos
         cursor = OrdenesWindow.conectarBD()
@@ -168,6 +178,11 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                         print("ubicacion", ubicacion)
                         print("stock", stock)
 
+                # Si todos los huecos de la máquina están vacíos
+                if cub_disponibles == 0:
+                    listaOrdenes.append(
+                        (maquina, material, huecos_disponibles, ubicacion, stock, cub_disponibles, pendientes, prioridad))
+
                 # SI EL NÚMERO DE CUBIERTAS QUE TIENE PARA HACER ES MAYOR O IGUAL QUE 210 NO GENERA ORDEN
                 if cub_disponibles < 140 and carros_llevar > 0:
                     listaOrdenes.append(
@@ -184,8 +199,6 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Añado las órdenes a la tabla
         self.visualizarOrdenes(listaOrdenesOrdenada)
 
-
-
         """row = self.tableWidget.currentRow()
         print("row seleccionada: ", row)
         if row != -1:
@@ -194,6 +207,7 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.btn_llevarMaterial.setEnabled(False)"""
 
     """ FUNCIÓN QUE AÑADE A LA TABLA Y MUESTRA EN PANTALLA LAS ÓRDENES GENERADAS """
+
     def visualizarOrdenes(self, listaOrdenesOrdenada):
         self.tableWidget.setRowCount(len(listaOrdenesOrdenada))
         for fila in range(len(listaOrdenesOrdenada)):
@@ -209,7 +223,7 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.tableWidget.item(fila, columna).setBackground(QColor("red"))
         self.tableWidget.clearSelection()
 
-        # Controla que se haya seleccionado una fila de la tabla para habilitar los botones llevar material y buscar meterial
+        # Controla que se haya seleccionado una fila de la tabla para habilitar los botones llevar material y buscar material
         self.tableWidget.setSelectionBehavior(QtWidgets.QTableWidget.SelectRows)
         self.tableWidget.selectionModel().selectionChanged.connect(self.itemSeleccionado)
 
@@ -219,7 +233,6 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             bool(self.tableWidget.selectionModel().selectedRows()))
         self.btn_buscarMaterial.setEnabled(
             bool(self.tableWidget.selectionModel().selectedRows()))
-
 
     """ Función para llevar el material """
 
@@ -248,7 +261,6 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         total = resul[0][3] - max_carros
         print("total", total)
 
-
         # Primero descuento el material que he cogido
         sql = "UPDATE MATERIALES SET STOCK='" + str(total) + "' WHERE CODIGO= '" + str(
             material) + "' AND ORIGEN= '" + str(ubicacion) + "' "
@@ -274,7 +286,8 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             print("max_carros", max_carros)
             if huecos[z][2] == 'VACIO' and cont_carros < max_carros:
                 print("Es vacío")
-                sql = "UPDATE HUECOS SET MATERIAL='"+material+"', CANTIDAD=140 WHERE ID='"+maquina+"' AND HUECO='"+huecos[z][1]+"' "
+                sql = "UPDATE HUECOS SET MATERIAL='" + material + "', CANTIDAD=140 WHERE ID='" + maquina + "' AND HUECO='" + \
+                      huecos[z][1] + "' "
                 cursor.executescript(sql)
                 cont_carros = cont_carros + 1
             else:
@@ -282,7 +295,6 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Actualizo la tabla órdenes
         self.generarOrdenes()
-
 
     """ Función que busca el material en otras ubicaciones """
 
@@ -301,11 +313,10 @@ class OrdenesWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if len(ubicacion) == 0:
             ubicacion = 'NULL'
         # Paso como argumento el material que tiene que buscar
-        os.system('python BuscarMaterial.py' + " " + maquina + " " + material + " " + max_carros + " " + ubicacion)
+        os.system('python BuscarMaterial.pyw' + " " + maquina + " " + material + " " + max_carros + " " + ubicacion)
 
         # Quito la selección de la fila anteriormente seleccionada
         self.tableWidget.clearSelection()
-
 
 
 if __name__ == "__main__":

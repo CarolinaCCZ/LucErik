@@ -17,7 +17,7 @@ class DecrementarTalonesConsumidos:
         # Conexión con la base de datos
         global con, cursor
         try:
-            con = sqlite3.connect('Y:\LucErik.db')
+            con = sqlite3.connect('sqlite/LucErik.db')
             cursor = con.cursor()
         except sqlite3.OperationalError:
             sys.exit()

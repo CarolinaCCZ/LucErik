@@ -8,6 +8,7 @@ Cada 20 minutos se incrementa en 1 el número de carros que se están produciend
 
 import sqlite3
 import os
+import sys
 
 
 class IncrementarTalonesFabricados:
@@ -20,7 +21,7 @@ class IncrementarTalonesFabricados:
         # Conexión con la base de datos
         global con, cursor
         try:
-            con = sqlite3.connect('Y:\LucErik.db')
+            con = sqlite3.connect('sqlite/LucErik.db')
             cursor = con.cursor()
         except sqlite3.OperationalError:
             sys.exit()
