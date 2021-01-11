@@ -32,10 +32,12 @@ Una vez completada la instalación, tan sólo es necesario acceder al directorio
 
 ## Aplicación desplegada
 La aplicación está desplegada en una máquina virtual que se puede descargar en el siguiente enlace: Enlace
+
 Usuario: TFG
 Contraseña: LucErik2021
 
 Para abrir la aplicación basta con ejecutar el archivo LucErik que se encuentra en el escritorio
+
 Número de Operario: 405041
 Número de servicio: 7
 
