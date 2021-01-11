@@ -42,7 +42,7 @@ Número de servicio: 7
 
 ## Uso de la aplicación
 Para usar la aplicación correctamente es necesario leer previamente la wiki del manual de usuario donde se explica su funcionamiento.
-Se encuetra en este link: http://wikilucerik.wikidot.com/
+Se encuentra en este link: http://wikilucerik.wikidot.com/
 
 
 
