@@ -37,6 +37,7 @@ Usuario: TFG
 
 Contraseña: LucErik2021
 
+
 Para abrir la aplicación basta con ejecutar el archivo LucErik que se encuentra en el escritorio
 
 Número de Operario: 405041
