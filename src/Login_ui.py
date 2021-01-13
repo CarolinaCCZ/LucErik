@@ -7,11 +7,14 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QIcon
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(751, 512)
+        self.setFixedSize(751, 512)
+        self.setWindowIcon(QIcon('imagenes/Logo.ico'))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.frameLogin = QtWidgets.QFrame(self.centralwidget)
@@ -85,7 +88,7 @@ class Ui_MainWindow(object):
         self.btn_Login.setObjectName("btn_Login")
         self.label_Nombre = QtWidgets.QLabel(self.frameLogin)
         self.label_Nombre.setEnabled(True)
-        self.label_Nombre.setGeometry(QtCore.QRect(150, 270, 461, 41))
+        self.label_Nombre.setGeometry(QtCore.QRect(150, 270, 490, 41))
         font = QtGui.QFont()
         font.setFamily("Century Gothic")
         font.setPointSize(20)
@@ -97,8 +100,9 @@ class Ui_MainWindow(object):
 "color:rgb(0, 64, 128)")
         self.label_Nombre.setInputMethodHints(QtCore.Qt.ImhHiddenText)
         self.label_Nombre.setObjectName("label_Nombre")
+        self.label_Nombre.setVisible(False)
         self.btn_acceder = QtWidgets.QPushButton(self.frameLogin)
-        self.btn_acceder.setEnabled(True)
+        self.btn_acceder.setVisible(False)
         self.btn_acceder.setGeometry(QtCore.QRect(330, 350, 93, 28))
         self.btn_acceder.setStyleSheet("background-color:rgb(164, 164, 255);\n"
 "color: rgb(0, 0, 0)")

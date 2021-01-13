@@ -17,29 +17,27 @@ class DecrementarTalonesConsumidos:
         # Conexión con la base de datos
         global con, cursor
         try:
-            con = sqlite3.connect('sqlite/LucErik.db')
+            con = sqlite3.connect('sqlite\LucErik.db')
             cursor = con.cursor()
         except sqlite3.OperationalError:
             sys.exit()
 
         cursor.execute("SELECT * FROM MAQUINAS ORDER BY ID ASC")
         cubiertas = cursor.fetchall()
-        print("Cubiertas: ", cubiertas)
+        #print("Cubiertas: ", cubiertas)
 
         for i in range(len(cubiertas)):
             # Compruebo si todavía hay que seguir produciendo
             if cubiertas[i][5] < cubiertas[i][4]:
-                print("")
-                print("i", i)
-                print("Hay que seguir produciendo", cubiertas[i][5], "<", cubiertas[i][4])
+                #print("Hay que seguir produciendo", cubiertas[i][5], "<", cubiertas[i][4])
 
                 # Compruebo si hay talones en la máquina para producir
                 sql = "SELECT * FROM HUECOS WHERE ID= '" + cubiertas[i][0] + "' ORDER BY ID ASC"
                 cursor.execute(sql)
                 talones = cursor.fetchall()
 
-                print("Talones: ", talones)
-                print("Máquina: ", cubiertas[i][0])
+                #print("Talones: ", talones)
+                #print("Máquina: ", cubiertas[i][0])
 
                 # Si en el primer hueco no hay talones, inserto la palabra 'VACIO' en el hueco 'H1'
                 if talones[0][3] == 0:
@@ -52,15 +50,14 @@ class DecrementarTalonesConsumidos:
                 # Si hay 2 o más talones en el primer hueco y si es de ese material:
                 # Incremento en 1 la producción de cubiertas
                 # Decremento en 2 el consumo de talones
-                print("cubiertas[i][2]", cubiertas[i][2])
 
                 # Si el número de talones es mayor que 2 y coincide el material
                 if talones[0][3] >= 2 and talones[0][2] == cubiertas[i][2]:
-                    print("Incremento en 1 la producción de cubiertas")
+                    #print("Incremento en 1 la producción de cubiertas")
                     sql = "UPDATE MAQUINAS SET PROD_ACTUAL=PROD_ACTUAL+1 WHERE ID='" + cubiertas[i][0] + "'"
                     cursor.executescript(sql)
 
-                    print("Decremento en 2 el consumo de talones")
+                    #print("Decremento en 2 el consumo de talones")
                     sql = "UPDATE HUECOS SET CANTIDAD=CANTIDAD-2 WHERE HUECO='H1' AND ID='" + cubiertas[i][0] + "'"
                     cursor.executescript(sql)
 
@@ -69,15 +66,14 @@ class DecrementarTalonesConsumidos:
                 else:
                     b = 1
                     while b < (len(talones)):
-                        print("talones[b][2]", talones[b][2])
 
                         # Si lo encuentro intercambio los huecos
                         if talones[b][2] == cubiertas[i][2]:
                             # Guardo lo que hay en el primer hueco
                             material = talones[0][2]
-                            print("MATERIAL:", material)
+                            #print("MATERIAL:", material)
                             cantidad = talones[0][3]
-                            print("CANTIDAD:", cantidad)
+                            #print("CANTIDAD:", cantidad)
 
                             # Guardo en el primer hueco lo que he encontrado
                             sql = "UPDATE HUECOS SET MATERIAL= '" + talones[b][2] + "', CANTIDAD= '" + str(
@@ -97,8 +93,8 @@ class DecrementarTalonesConsumidos:
             # Si se ha llegado al tope de cubiertas del primer material, es decir, del que se está produciendo
             # Cambio los materiales: En MAT_ACTUAL se coloca MAT_PROX
             else:
-                print("Si ya se han hecho todas las cubiertas de esa medida", cubiertas[i][5], "=", cubiertas[i][4])
-                print("Cambio los materiales de la máquina")
+                #print("Si ya se han hecho todas las cubiertas de esa medida", cubiertas[i][5], "=", cubiertas[i][4])
+                #print("Cambio los materiales de la máquina")
                 sql = "UPDATE MAQUINAS SET MAT_ACTUAL=MAT_PROX WHERE ID='" + cubiertas[i][0] + "'"
                 cursor.executescript(sql)
                 sql = "UPDATE MAQUINAS SET TOTALES_ACTUAL=TOTALES_PROX WHERE ID='" + cubiertas[i][0] + "'"

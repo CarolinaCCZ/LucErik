@@ -18,10 +18,11 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1055, 656)
+        self.setFixedSize(1055, 656)
         MainWindow.setWindowTitle("Ordenes")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-
+        self.setWindowIcon(QIcon('imagenes/Logo.ico'))
         self.frame = QtWidgets.QFrame(self.centralwidget)
         self.frame.setGeometry(QtCore.QRect(0, 0, 1055, 71))
         self.frame.setStyleSheet("background-color: rgb(230, 233, 236);")
@@ -70,6 +71,15 @@ class Ui_MainWindow(object):
                                 "font: 11pt \"MS Shell Dlg 2\";")
         self.hora.setObjectName("hora")
 
+        self.btn_actualizar = QtWidgets.QPushButton(self.frame)
+        self.btn_actualizar.setGeometry(QtCore.QRect(950, 10, 61, 51))
+        self.btn_actualizar.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap("imagenes/reload.png"), QtGui.QIcon.Active, QtGui.QIcon.On)
+        self.btn_actualizar.setIcon(icon)
+        self.btn_actualizar.setIconSize(QtCore.QSize(60, 60))
+        self.btn_actualizar.setObjectName("pushButton")
+
         self.frame_2 = QtWidgets.QFrame(self.centralwidget)
         self.frame_2.setStyleSheet("background-color: rgb(230, 233, 236);")
         self.frame_2.setGeometry(QtCore.QRect(0, 70, 1055, 561))
@@ -81,7 +91,6 @@ class Ui_MainWindow(object):
         self.tableWidget.setGeometry(QtCore.QRect(15, 0, 1023, 501))
         self.tableWidget.setStyleSheet("font: 10pt \"MS Shell Dlg 2\";")
         self.tableWidget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.tableWidget.setRowCount(4)
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(8)
 
@@ -99,6 +108,7 @@ class Ui_MainWindow(object):
                                               "color: \"white\";\n"
                                               "font: 11pt \"MS Shell Dlg 2\";")
         self.btn_llevarMaterial.setObjectName("btn_llevarMaterial")
+        self.btn_llevarMaterial.setEnabled(False)
 
         self.btn_buscarMaterial = QtWidgets.QPushButton(self.frame_3)
         self.btn_buscarMaterial.setText("Buscar Material")
@@ -107,6 +117,7 @@ class Ui_MainWindow(object):
                                               "color: \"white\";\n"
                                               "font: 11pt \"MS Shell Dlg 2\";")
         self.btn_buscarMaterial.setObjectName("btn_buscarMaterial")
+        self.btn_buscarMaterial.setEnabled(False)
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")

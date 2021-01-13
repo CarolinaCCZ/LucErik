@@ -31,7 +31,8 @@ class IncrementarTalonesFabricados(QThread):
     def run(self):
         while True:
             os.system('python IncrementarTalonesFabricados.py')
-            time.sleep(3600)
+            # Cada 20 minutos se produce un carro
+            time.sleep(1200)
 
 
 """ Proceso de decrementa el número de talones que se consumen e incrementa el número de cubiertas fabricadas """
@@ -44,7 +45,8 @@ class DecrementarTalonesConsumidos(QThread):
     def run(self):
         while True:
             os.system('python DecrementarTalonesConsumidos.py')
-            time.sleep(3600)
+            # Cada 3 minutos se genera una cubierta
+            time.sleep(180)
 
 
 class LoginWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -78,7 +80,7 @@ class LoginWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def conectarBD(self):
         global con, cursorServicios, cursorOperarios, name
         try:
-            con = sqlite3.connect('sqlite/LucErik.db')
+            con = sqlite3.connect('sqlite\LucErik.db')
             cursorOperarios = con.cursor()
             cursorServicios = con.cursor()
         except sqlite3.OperationalError:

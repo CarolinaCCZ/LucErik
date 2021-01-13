@@ -27,7 +27,7 @@ class BuscarMaterialWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def conectarBD():
         global con, cur
         try:
-            con = sqlite3.connect('sqlite/LucErik.db')
+            con = sqlite3.connect('sqlite\LucErik.db')
             cur = con.cursor()
         except sqlite3.OperationalError:
             sys.exit()

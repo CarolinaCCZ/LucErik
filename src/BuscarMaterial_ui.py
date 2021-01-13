@@ -18,7 +18,9 @@ class Ui_MainWindow(object):
         global comboBox
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(525, 600)
+        self.setFixedSize(525, 600)
         MainWindow.setWindowTitle("Buscar Material")
+        self.setWindowIcon(QIcon('imagenes/Logo.ico'))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.frame = QtWidgets.QFrame(self.centralwidget)
@@ -31,7 +33,7 @@ class Ui_MainWindow(object):
         self.btn_Volver = QtWidgets.QPushButton(self.frame)
         self.btn_Volver.setText("  Volver")
         self.btn_Volver.setGeometry(QtCore.QRect(70, 570, 111, 41))
-        self.btn_Volver.setIcon(QtGui.QIcon("back.png"))
+        self.btn_Volver.setIcon(QtGui.QIcon("imagenes/back.png"))
         self.btn_Volver.setStyleSheet("background-color:steelblue;\n"
                                        "font: 11pt \"MS Shell Dlg 2\";\n"
                                        "color: white")
