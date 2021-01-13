@@ -61,7 +61,7 @@ Each order displays all the information the driver needs: Which machine needs ma
 For the local installation of this application it is necessary to install the following components:
 Libraries are installed as follows:
 
-* **Python**: Versión 3.6
+* **Python**: Version 3.6
 * **Libraries from Python**:
     * **PyQt5**: Version 5.15.2
     * **Pywin32**: Version 300
@@ -83,10 +83,12 @@ Once the installation is completed, it is only necessary to access the directory
 
 ## Deployed application
 The application is deployed in a virtual machine that can be downloaded at the following link:
+
 User: TFG
 Password: LucErik2021
 
 To open the application, just run the LucErik file found on the desktop.
+
 Operator number: 405041
 Service number: 7
 
