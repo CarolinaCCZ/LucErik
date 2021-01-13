@@ -52,16 +52,19 @@ Se encuentra en este link: http://wikilucerik.wikidot.com/
 
 
 # Welcome to LucErik
+The material distribution process in a factory is required to be optimized. The project develops a general optimization tool that can be used in most number of cases. The objective of the work is to optimize the delivery of materials that require a set of machines and jobs.
+The application shows in an orderly manner a list of orders that the operator must fulfill.
+Each order displays all the information the driver needs: Which machine needs material, what type of material it needs, the exact location of that material and how much stock there is. How much material should be taken by the machine that needs it, what it can continue to produce with the material it is left, what the remains of the production are and its priority.
 
 
 ## Local installation
+For the local installation of this application it is necessary to install the following components:
+Libraries are installed as follows:
 
 * **Python**: Versión 3.6
 * **Libraries from Python**:
     * **PyQt5**: Version 5.15.2
     * **Pywin32**: Version 300
-    
-
 
 PyQt5:
 ```
@@ -75,18 +78,18 @@ $ pip install pywin32
 
 
 ### To execute
-
+Once the installation is completed, it is only necessary to access the directory where the project is located and run the LucErik.pyw file.
 
 
 ## Deployed application
-
+The application is deployed in a virtual machine that can be downloaded at the following link:
 User: TFG
 Password: LucErik2021
 
-
+To open the application, just run the LucErik file found on the desktop.
 Operator number: 405041
 Service number: 7
 
 
 ## Application use
-
+To use the application correctly it is necessary to previously read the wiki of the user manual where its operation is explained. It can be found at this link: http://wikilucerik.wikidot.com/
