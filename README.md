@@ -31,7 +31,7 @@ Una vez completada la instalación, tan sólo es necesario acceder al directorio
 
 
 ## Aplicación desplegada
-La aplicación está desplegada en una máquina virtual que se puede descargar en el siguiente enlace: Enlace
+La aplicación está desplegada en una máquina virtual. Se ha incluído un link desde el que descargar la máquina virtual en el documento Memoria_Lucerik.
 
 Usuario: TFG
 
@@ -82,7 +82,7 @@ Once the installation is completed, it is only necessary to access the directory
 
 
 ## Deployed application
-The application is deployed in a virtual machine that can be downloaded at the following link:
+The application is deployed in a virtual machine. A link has been included in the document Memoria_Lucerik from which to download a virtual machine. 
 
 User: TFG
 Password: LucErik2021
